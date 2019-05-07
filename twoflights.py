@@ -1,9 +1,10 @@
 import lucs_tools
-from time import sleep
+import time
+import numpy as np
 
 class skyscanner(lucs_tools.internet.internet_base_util):
 
-    BASE_LINK = 'https://www.skyscanner.com/transport/flights-from/FROM_AIRPORT/DEPART_DATE/RETURN_DATE/?adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=1&preferdirects=false&outboundaltsenabled=ALTS_ENABLED&inboundaltsenabled=ALTS_ENABLED&ref=home&previousCultureSource=GEO_LOCATION&redirectedFrom=www.skyscanner.com&locale=en-GB&currency=USD&market=US&_mp=16a8d030756ea-03e7f4b2ae4014-e323069-190140-16a8d0307570_1557144041864&_ga=2.238286656.1539299884.1557143947-922572072.1557143947'
+    BASE_LINK = 'https://www.skyscanner.com/transport/flights-from/FROM_AIRPORT/DEPART_DATE/RETURN_DATE/?adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=1&preferdirects=false&outboundaltsenabled=ALTS_ENABLED&inboundaltsenabled=ALTS_ENABLED&ref=home'
 
     @staticmethod
     def main(
@@ -56,13 +57,37 @@ class skyscanner(lucs_tools.internet.internet_base_util):
 
     def grab_data(
         self,
+        timeout=10,
+        spcings=((0.2, 0.6), (1.,4.), (0.2, 0.7)),
     ):
         browse_elts = True
         elts = self.get_elements_with_param_matching_spec('class_name', 'browse_data_route')
-    # def inputdates(
-    #     self,
-    #     dar
-    # )
+        webelts = self.get_elements_with_param_matching_spec('class_name', 'city-list')
+        
+        # gnaarrrly
+        look1, click, look2 =  tuple(map(lambda spcing: np.random.random(len(elts))*abs(np.diff(spcing)) + abs(np.random.normal(spcing[0], np.diff(spcing)*0.3, len(elts))) + 0.5*spcing[0] + np.random.random(), spcings))
+
+        i = 0
+        texts = []
+        run = True
+
+        while run:
+            time.sleep(look1[i])
+            elts[i].click()
+            time.sleep(look2[i])
+            t0 = time.time()
+            found = False
+            while time.time() - t0 < timeout and not found:
+                if len(webelts[i].text) > 0:
+                    found = True
+            if not found:
+                run = False
+            else:
+                texts.append(webelts[i].text)
+            time.sleep(click[i])
+            elts[i].click()
+        
+        return texts
 
 class google(lucs_tools.internet.internet_base_util):
 
